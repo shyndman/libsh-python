@@ -7,15 +7,17 @@ requires-python = ">=3.12"
 dependencies = ["numpy<2", "pydantic>=2", "rich>=14.1.0", "structlog>=25.4.0"]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
 
 [project.urls]
-repository = "https://github.com/shyndman/shlib"
-"Bug Tracker" = "https://github.com/shyndman/shlib/issues"
+repository = "https://github.com/shyndman/shlib-python"
+"Bug Tracker" = "https://github.com/shyndman/shlib-python/issues"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/shlib"]
+[tool.uv.build-backend]
+module-name = "shlib"
+module-root = "src"
+
 
 [tool.pyright]
 include = ["src", "tests"]
