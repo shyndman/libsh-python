@@ -1,4 +1,4 @@
-# shlib
+# libsh
 
 Scott Hyndman's reusable common package for Python projects.
 

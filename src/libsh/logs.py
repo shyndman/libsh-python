@@ -10,8 +10,7 @@ from io import StringIO
 from typing import Any
 
 import structlog
-from structlog.typing import EventDict, Processor
-from Wstructlog.dev import (
+from structlog.dev import (
   BLUE,
   BRIGHT,
   CYAN,
@@ -27,6 +26,7 @@ from Wstructlog.dev import (
   KeyValueColumnFormatter,
   _pad,
 )
+from structlog.typing import EventDict, Processor
 
 from .proc import FloatPrecisionProcessor, LoggerFilterProcessor
 

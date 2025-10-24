@@ -1,5 +1,5 @@
 [project]
-name = "shlib"
+name = "libsh"
 version = "0.0.0"
 description = "Add your description here"
 authors = [{name = "shyndman", email = "scotty.hyndman@gmail.com"}]
@@ -11,11 +11,11 @@ requires = ["uv_build>=0.9.5,<0.10.0"]
 build-backend = "uv_build"
 
 [project.urls]
-repository = "https://github.com/shyndman/shlib-python"
-"Bug Tracker" = "https://github.com/shyndman/shlib-python/issues"
+repository = "https://github.com/shyndman/libsh-python"
+"Bug Tracker" = "https://github.com/shyndman/libsh-python/issues"
 
 [tool.uv.build-backend]
-module-name = "shlib"
+module-name = "libsh"
 module-root = "src"
 
 
@@ -42,7 +42,7 @@ select = ["E", "F", "I", "W"]
 ignore = []
 
 [tool.ruff.lint.isort]
-known-first-party = ["shlib"]
+known-first-party = ["libsh"]
 
 [tool.ruff.format]
 quote-style = "double"
