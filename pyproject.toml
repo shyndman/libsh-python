@@ -1,10 +1,10 @@
 [project]
 name = "libsh"
-version = "0.0.0"
-description = "Add your description here"
+version = "0.1.0"
+description = "Scott Hyndman's reusable common package for Python projects. Provides opinionated structured logging with custom rendering (24-bit colors, relative timestamps, compact levels) and type-safe value formatting utilities (time units, ranges, pretty-printing)."
 authors = [{name = "shyndman", email = "scotty.hyndman@gmail.com"}]
 requires-python = ">=3.12"
-dependencies = ["numpy<2", "pydantic>=2", "rich>=14.1.0", "structlog>=25.4.0"]
+dependencies = ["numpy", "pydantic>=2", "rich>=14", "structlog>=25"]
 
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]
