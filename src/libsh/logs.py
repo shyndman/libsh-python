@@ -133,12 +133,7 @@ def _relative_time_processor(
   _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
 ) -> EventDict:
   """Add relative timestamp since program start with hours:minutes:seconds.milliseconds format."""
-  elapsed = time.time() - _PROGRAM_START_TIME
-
-  # Calculate hours, minutes, seconds
-  hours = int(elapsed // 3600)
-  minutes = int((elapsed % 3600) // 60)
-  seconds = elapsed % 60
+  hours, minutes, seconds = _relative_time_parts()
 
   # ANSI color codes: \x1b[2m for dim/gray, \x1b[90m for darker gray, \x1b[0m to reset
   gray = "\x1b[2m"  # Normal gray (like original timestamp)
@@ -161,6 +156,30 @@ def _relative_time_processor(
 
   event_dict["timestamp"] = time_str
   return event_dict
+
+
+def _relative_time_processor_plain(
+  _logger: structlog.stdlib.BoundLogger, _method_name: str, event_dict: EventDict
+) -> EventDict:
+  """Add relative timestamp without ANSI styling for machine-consumable outputs."""
+  hours, minutes, seconds = _relative_time_parts()
+
+  separator = ":"
+  hours_str = f"{hours:02d}{separator}" if hours != 0 else ""
+  minutes_str = f"{minutes:02d}{separator}" if minutes != 0 and hours != 0 else ""
+  seconds_str = f"{seconds:06.3f}"
+
+  event_dict["timestamp"] = f"+{hours_str}{minutes_str}{seconds_str}"
+  return event_dict
+
+
+def _relative_time_parts() -> tuple[int, int, float]:
+  """Return elapsed (hours, minutes, seconds) since program start."""
+  elapsed = time.time() - _PROGRAM_START_TIME
+  hours = int(elapsed // 3600)
+  minutes = int((elapsed % 3600) // 60)
+  seconds = elapsed % 60
+  return hours, minutes, seconds
 
 
 def _compact_level_processor(
@@ -238,24 +257,41 @@ def setup_logging(
     filters += [LoggerFilterProcessor(filter_to_logger)]
 
   # Configure processors
-  shared_processors: list[Processor] = [
-    structlog.stdlib.add_logger_name,
-    structlog.stdlib.add_log_level,
-    *filters,
-    _debug_event_colorer,  # Run before level processing
-    _compact_level_processor,
-    structlog.stdlib.PositionalArgumentsFormatter(),
-    structlog.stdlib.ExtraAdder(),
-    FloatPrecisionProcessor(digits=3),
-    _relative_time_processor,
-    structlog.processors.StackInfoRenderer(),
-    # structlog.processors.format_exc_info,
-  ]
+  processors: list[Processor] = []
 
   # Add correlation ID if provided
   if correlation_id:
-    shared_processors.insert(0, structlog.contextvars.merge_contextvars)
+    processors.append(structlog.contextvars.merge_contextvars)
     structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
+
+  # Level filtering should happen before any expensive processors run
+  processors.extend(filters)
+
+  processors += [
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.add_log_level,
+  ]
+
+  if json_output:
+    processors += [
+      structlog.stdlib.PositionalArgumentsFormatter(),
+      structlog.stdlib.ExtraAdder(),
+      FloatPrecisionProcessor(digits=3),
+      _relative_time_processor_plain,
+      structlog.processors.StackInfoRenderer(),
+      # structlog.processors.format_exc_info,
+    ]
+  else:
+    processors += [
+      _debug_event_colorer,  # Run before level processing
+      _compact_level_processor,
+      structlog.stdlib.PositionalArgumentsFormatter(),
+      structlog.stdlib.ExtraAdder(),
+      FloatPrecisionProcessor(digits=3),
+      _relative_time_processor,
+      structlog.processors.StackInfoRenderer(),
+      # structlog.processors.format_exc_info,
+    ]
 
   # Configure output format
   if json_output:
@@ -283,7 +319,7 @@ def setup_logging(
             value_style_map=[
               (
                 # Integers (including negative) get bright green styling
-                r"^True|False$",
+                r"^(True|False)$",
                 hex_to_ansi_fg(0x6E6A86),
               ),
               (
@@ -340,16 +376,19 @@ def setup_logging(
       ],
     )
 
+  # Omit level filters when processing stdlib log records to avoid double filtering
+  formatter_pre_chain: list[Processor] = [proc for proc in processors if proc not in filters]
+
   # Configure structlog
   structlog.configure(
-    processors=shared_processors + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
+    processors=processors + [structlog.stdlib.ProcessorFormatter.wrap_for_formatter],
     wrapper_class=structlog.stdlib.BoundLogger,
     logger_factory=structlog.stdlib.LoggerFactory(),
     cache_logger_on_first_use=True,
   )
 
   formatter = structlog.stdlib.ProcessorFormatter(
-    foreign_pre_chain=shared_processors,
+    foreign_pre_chain=formatter_pre_chain,
     processors=[
       structlog.stdlib.ProcessorFormatter.remove_processors_meta,
       log_renderer,
