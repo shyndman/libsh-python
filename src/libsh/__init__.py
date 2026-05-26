@@ -11,7 +11,7 @@ from .format import (
   Seconds,
   Unit,
 )
-from .logs import get_logger, setup_logging, setup_logging_from_env
+from .logging import get_logger, setup_logging, setup_logging_from_env
 
 __all__ = [
   "get_logger",
