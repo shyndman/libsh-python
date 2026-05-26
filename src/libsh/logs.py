@@ -192,28 +192,28 @@ def _compact_level_processor(
   # Original colors and their 10% darkened versions for brackets
   level_mapping = {
     "debug": {
-      "text": f"{hex_to_ansi_fg(0x908CAA)}dbug{reset}",  # fg #908caa
-      "bracket": hex_to_ansi_fg(0x827E99),  # 10% darker
+      "text": f"{hex_to_ansi_fg(0x908CAA)}dbug{reset}",
+      "bracket": hex_to_ansi_fg(0x827E99),
     },
     "info": {
-      "text": f"{hex_to_ansi_fg(0x9CCFD8)}info{reset}",  # fg #9ccfd8
-      "bracket": hex_to_ansi_fg(0x8CBAC2),  # 10% darker
+      "text": f"{hex_to_ansi_fg(0x9CCFD8)}info{reset}",
+      "bracket": hex_to_ansi_fg(0x8CBAC2),
     },
     "warning": {
-      "text": f"{hex_to_ansi_fg(0xF6C177)}warn{reset}",  # fg #f6c177
-      "bracket": hex_to_ansi_fg(0xDDAE6B),  # 10% darker
+      "text": f"{hex_to_ansi_fg(0xF6C177)}warn{reset}",
+      "bracket": hex_to_ansi_fg(0xDDAE6B),
     },
     "error": {
-      "text": f"{hex_to_ansi_fg(0xEB6F92)}eror{reset}",  # fg #eb6f92
-      "bracket": hex_to_ansi_fg(0xD46483),  # 10% darker
+      "text": f"{hex_to_ansi_fg(0xEB6F92)}eror{reset}",
+      "bracket": hex_to_ansi_fg(0xD46483),
     },
     "exception": {
-      "text": f"{hex_to_ansi_fg(0xEB6F92)}exc!{reset}",  # fg #eb6f92
-      "bracket": hex_to_ansi_fg(0xD46483),  # 10% darker
+      "text": f"{hex_to_ansi_fg(0xEB6F92)}exc!{reset}",
+      "bracket": hex_to_ansi_fg(0xD46483),
     },
     "critical": {
-      "text": f"\x1b[48;2;235;111;146;38;2;33;32;46mcrit{reset}",  # bg #eb6f92, fg #21202e
-      "bracket": hex_to_ansi_fg(0xD46483),  # 10% darker
+      "text": f"\x1b[48;2;235;111;146;38;2;33;32;46mcrit{reset}",
+      "bracket": hex_to_ansi_fg(0xD46483),
     },
   }
 
