@@ -125,6 +125,23 @@ def test_setup_logging_from_env_honors_level_json_and_correlation_id(
   assert len(records) == 1
   assert records[0]["event"] == "env-event"
   assert records[0]["correlation_id"] == "corr-123"
+
+
+def test_logging_reorg_preserves_public_import_paths() -> None:
+  from libsh.logging import get_logger as logging_get_logger
+  from libsh.logging import setup_logging as logging_setup_logging
+  from libsh.logging import setup_logging_from_env as logging_setup_logging_from_env
+  from libsh.logging.processors import FloatPrecisionProcessor as logging_float_precision_processor
+  from libsh.logging.processors import LoggerFilterProcessor as logging_logger_filter_processor
+  from libsh.proc import FloatPrecisionProcessor, LoggerFilterProcessor
+
+  assert get_logger is logging_get_logger
+  assert setup_logging is logging_setup_logging
+  assert setup_logging_from_env is logging_setup_logging_from_env
+  assert FloatPrecisionProcessor is logging_float_precision_processor
+  assert LoggerFilterProcessor is logging_logger_filter_processor
+
+
 def _parse_json_lines(output: str) -> list[dict[str, object]]:
   return [json.loads(line) for line in output.splitlines() if line.strip()]
 

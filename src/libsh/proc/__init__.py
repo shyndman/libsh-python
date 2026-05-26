@@ -1,5 +1,4 @@
-from .float import FloatPrecisionProcessor
-from .logger_filter import LoggerFilterProcessor
+from libsh.logging.processors import FloatPrecisionProcessor, LoggerFilterProcessor
 
 __all__ = [
   "FloatPrecisionProcessor",
