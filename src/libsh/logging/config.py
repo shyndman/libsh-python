@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Final, cast
+from pathlib import Path
+from typing import Final, TextIO, cast
 
 import structlog
 from structlog.typing import Processor
@@ -15,7 +16,18 @@ from .processors import (
 )
 from .render import build_console_renderer
 
-_MANAGED_ROOT_HANDLER_ATTR: Final = "_libsh_managed_root_handler"
+
+class _ManagedStreamHandler(logging.StreamHandler[TextIO]):
+  """Root console handler installed by libsh; identified by type so repeated
+  setup_logging calls replace prior libsh handlers without touching foreign ones."""
+
+
+class _ManagedFileHandler(logging.FileHandler):
+  """Root JSON file handler installed by libsh; identified by type like its
+  stream sibling so setup_logging stays idempotent across calls."""
+
+
+_MANAGED_ROOT_HANDLER_TYPES: Final = (_ManagedStreamHandler, _ManagedFileHandler)
 _JSON_ENV_TRUTHY: Final = frozenset({"true", "1", "yes", "on"})
 _PROPAGATING_LIBRARY_LOGGERS: Final = ("websockets",)
 
@@ -25,6 +37,7 @@ def setup_logging(
   json_output: bool = False,
   correlation_id: str | None = None,
   filter_to_logger: str | None = None,
+  log_file: Path | None = None,
 ) -> None:
   """Configure structured logging for the application."""
   processors: list[Processor] = []
@@ -94,8 +107,24 @@ def setup_logging(
     ],
   )
 
+  # A file sink always renders JSON regardless of console format, so persisted
+  # logs stay machine-parseable. It shares the same pre-chain, so structured
+  # fields (including any ANSI baked into the console pipeline) are serialized
+  # verbatim and JSON-escaped.
+  file_formatter: logging.Formatter | None = None
+  if log_file is not None:
+    file_formatter = structlog.stdlib.ProcessorFormatter(
+      foreign_pre_chain=formatter_pre_chain,
+      processors=[
+        structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+        structlog.processors.JSONRenderer(),
+      ],
+    )
+
   root_logger = logging.getLogger()
-  _replace_managed_root_handler(root_logger, formatter, level, filter_to_logger)
+  _replace_managed_root_handler(
+    root_logger, formatter, level, filter_to_logger, log_file, file_formatter
+  )
   _configure_library_loggers()
 
 
@@ -126,22 +155,30 @@ def _replace_managed_root_handler(
   formatter: logging.Formatter,
   level: str,
   filter_to_logger: str | None,
+  log_file: Path | None,
+  file_formatter: logging.Formatter | None,
 ) -> None:
   managed_handlers = [
-    handler
-    for handler in root_logger.handlers
-    if getattr(handler, _MANAGED_ROOT_HANDLER_ATTR, False)
+    handler for handler in root_logger.handlers if isinstance(handler, _MANAGED_ROOT_HANDLER_TYPES)
   ]
   for handler in managed_handlers:
     root_logger.removeHandler(handler)
     handler.close()
 
-  handler = logging.StreamHandler()
-  handler.setFormatter(formatter)
+  stream_handler = _ManagedStreamHandler()
+  stream_handler.setFormatter(formatter)
   if filter_to_logger:
-    handler.addFilter(logging.Filter(filter_to_logger))
-  setattr(handler, _MANAGED_ROOT_HANDLER_ATTR, True)
-  root_logger.addHandler(handler)
+    stream_handler.addFilter(logging.Filter(filter_to_logger))
+  root_logger.addHandler(stream_handler)
+
+  if log_file is not None and file_formatter is not None:
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = _ManagedFileHandler(log_file, encoding="utf-8")
+    file_handler.setFormatter(file_formatter)
+    if filter_to_logger:
+      file_handler.addFilter(logging.Filter(filter_to_logger))
+    root_logger.addHandler(file_handler)
+
   root_logger.setLevel(level)
 
 

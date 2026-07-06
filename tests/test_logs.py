@@ -5,6 +5,7 @@ import json
 import logging
 from collections.abc import Iterator, Sequence
 from contextlib import redirect_stderr
+from pathlib import Path
 from typing import TypedDict
 
 import pytest
@@ -73,6 +74,23 @@ def test_setup_logging_is_idempotent_for_root_stream_handlers() -> None:
   assert first_handler_count == baseline_handler_count + 1
   assert second_handler_count == baseline_handler_count + 1
   assert len([line for line in stderr.getvalue().splitlines() if line.strip()]) == 1
+
+
+def test_setup_logging_writes_json_lines_to_log_file(tmp_path: Path) -> None:
+  log_file = tmp_path / "sub" / "run.log"
+  root_logger = logging.getLogger()
+
+  baseline_handler_count = len(root_logger.handlers)
+  setup_logging(level="INFO", log_file=log_file)
+  get_logger("tests.file.sink").info("event-text", key="val", n=3)
+
+  assert len(root_logger.handlers) == baseline_handler_count + 2
+  assert log_file.exists()
+
+  record = json.loads(log_file.read_text().splitlines()[-1])
+  assert record["event"] == "event-text"
+  assert record["key"] == "val"
+  assert record["n"] == 3
 
 
 def test_setup_logging_json_output_formats_structlog_and_stdlib() -> None:
