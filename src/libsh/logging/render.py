@@ -3,7 +3,15 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from io import StringIO
 
-from structlog.dev import BRIGHT, DIM, RESET_ALL, Column, ConsoleRenderer, KeyValueColumnFormatter
+from structlog.dev import (
+  BRIGHT,
+  DIM,
+  RESET_ALL,
+  Column,
+  ConsoleRenderer,
+  KeyValueColumnFormatter,
+  RichTracebackFormatter,
+)
 
 
 def _write(sio: StringIO, value: str) -> None:
@@ -108,6 +116,7 @@ def build_console_renderer() -> ConsoleRenderer:
 
   return ConsoleRenderer(
     colors=True,
+    exception_formatter=RichTracebackFormatter(show_locals=False, width=110),
     columns=[
       Column(
         "",
